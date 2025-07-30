@@ -1,0 +1,99 @@
+---
+title: "Project"
+output: html_document
+date: "2025-07-30"
+---
+#Load Packages
+library(readxl)
+library(readr)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+
+#Open Datasets
+load("~/Downloads/covariate_df.rData")
+library(readr)
+questionnaire <- read_csv("~/Downloads/questionnaire.csv")
+
+#Merge Datasets
+cov <- covariate_df
+ques <- questionnaire
+merged_data <- left_join(cov, ques, by=c('SEQN'))
+view(merged_data)
+
+#Select Variables of Interest
+df <- merged_data |>
+  select(SEQN, RIAGENDR,RIDAGEYR, RIDRETH3, MCQ220, DMDEDUC3, SIALANG) 
+  View(df)
+  
+#Select Complete Cases
+df_comp <- df |>
+  filter(!is.na(SEQN) & !is.na(RIAGENDR) & !is.na(RIDAGEYR) & !is.na(DMDEDUC3))
+  View(df_comp)
+
+#Rename Columns
+df1 <- rename (df, id="SEQN", Age="RIDAGEYR", Gender="RIAGENDR", Cancer="MCQ220", Education="DMDEDUC3", Language="SIALANG", Race="RIDRETH3")
+  glimpse
+View(df1)
+
+#Remove Missing Values
+df_comp <- df1 |>
+  filter(!is.na(Cancer))
+  View(df_comp)
+  
+#Rename Cancer
+df_comp$Cancer <- factor(df_comp$Cancer, levels = c(1,2), labels = c ("Cancer", "No Cancer"), ordered = T)
+  
+#Summary Table by Cancer
+table1(~ Age  + Gender  + Language + Race | Cancer, data = df_comp, overall = "Total")
+
+#Histogram of Cancer Status
+ggplot(df_comp, aes(x=as.factor(Cancer), fill=as.factor(Cancer) )) +
+labs(
+x = "Cancer Status",
+y = "Count",
+title = "Cancer Status"
+)+
+  geom_bar( ) +
+  scale_fill_manual(
+    values = c("1" = "#FF69B4", "2" = "#1E90FF"),  
+    labels = c("1" = "Cancer", "2" = "No Cancer")
+  ) +
+  theme(legend.position="none")
+
+
+#Histogram of Cancer vs No Cancer Groups
+library(ggplot2)
+ggplot(df_comp, aes(x = factor(Cancer), y = Age, fill = factor(Cancer))) +
+  geom_col(width = 0.6, alpha = 0.8) +  
+  labs(
+    x = "Cancer Status",  # X axis label
+    y = "Age",  # Y axis label
+    title = "Age by Cancer Status",  # Title
+    fill = "Cancer Status"  # Legend title
+  ) +
+  scale_fill_manual(
+    values = c("1" = "#FF69B4", "2" = "#1E90FF"),  # Custom colors for bar graph
+    labels = c("1" = "Cancer", "2" = "No Cancer")  # Full labels for the legend
+  ) +
+  theme_minimal(base_size = 10) +  
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold", color = "#333333"),  
+    axis.title.x = element_text(size = 12, face = "bold", color = "#333333"),  # Styled x axis title
+    axis.title.y = element_text(size = 12, face = "bold", color = "#333333"),  # Styled y axis title
+    axis.text = element_text(size = 10, color = "#333333"),  # Styled axis text
+    legend.position = "bottom",  # Move legend 
+    legend.title = element_text(size = 10, face = "bold"),  # Styled legend title
+    legend.text = element_text(size = 10),  # Styled legend text
+    panel.grid.major = element_line(color = "#DDDDDD"),  # Softer grid lines
+    panel.grid.minor = element_blank(),  # Remove minor grid lines
+    panel.background = element_rect(fill = "white", color = NA),  # Panel background
+    plot.background = element_rect(fill = "white", color = NA)  # Plot background
+  ) +
+  geom_text(
+    aes(label = Age),  # Add labels showing the number of events
+    vjust = -0.5,  # Position labels above the bars
+    size = 3,  # Text size
+    color = "#333333",  # Text color
+    fontface = "bold"  # Bold font
+  )
