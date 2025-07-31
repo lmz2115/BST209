@@ -42,24 +42,33 @@ df_comp <- df1 |>
   View(df_comp)
   
 #Rename Cancer
-df_comp$Cancer <- factor(df_comp$Cancer, levels = c(1,2), labels = c ("Cancer", "No Cancer"), ordered = T)
-  
-#Summary Table by Cancer
-table1(~ Age  + Gender  + Language + Race | Cancer, data = df_comp, overall = "Total")
+df_comp2 <- df_comp
+df_comp2$Cancer <- factor(df_comp2$Cancer, levels = c(1,2), labels = c ("Cancer", "No Cancer"), ordered = T)
 
-#Histogram of Cancer Status
-ggplot(df_comp, aes(x=as.factor(Cancer), fill=as.factor(Cancer) )) +
+  
+#Table 1 Summary Table by Cancer
+table1(~ Age_years  + Gender  + Race_Ethnicity + Education_Level + Marital_Status + Household_Size + Income_to_Poverty_Ratio | MCQ220, data = d, overall = "Total", caption = "Table 1: Demographic Characteristics by Cancer Status")
+
+#Plot of Cancer Status
+ggplot(d, aes(x=as.factor(MCQ220), fill=as.factor(MCQ220) )) +
 labs(
 x = "Cancer Status",
 y = "Count",
 title = "Cancer Status"
 )+
   geom_bar( ) +
+  geom_text(stat = "count", aes(label = ..count..), vjust = -0.5) +
   scale_fill_manual(
-    values = c("1" = "#FF69B4", "2" = "#1E90FF"),  
-    labels = c("1" = "Cancer", "2" = "No Cancer")
+    values = c("No" = "#FFA500", "Yes" = "#FFDB58"),  
+    labels = c("Yes" = "Cancer", "No" = "No Cancer")
   ) +
-  theme(legend.position="none")
+  scale_x_discrete(
+  labels = c("Yes" = "Cancer", "No" = "No Cancer")
+)+
+  theme(plot.title = element_text(hjust = 0.5), legend.position="none", panel.background = element_rect(fill = "white"),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank())
+  
 
 
 #Histogram of Cancer vs No Cancer Groups
@@ -97,3 +106,69 @@ ggplot(df_comp, aes(x = factor(Cancer), y = Age, fill = factor(Cancer))) +
     color = "#333333",  # Text color
     fontface = "bold"  # Bold font
   )
+  
+#Violin Plot of Age by Cancer Status
+ggplot(d, aes(x = as.factor(MCQ220), y = Age_years, fill = as.factor(MCQ220))) +
+  geom_violin(trim = FALSE) +
+  labs(
+    x = "Cancer Status",
+    y = "Age",
+    title = "Age Distribution by Cancer Status",
+    fill = "Cancer Status"
+  ) +
+  scale_fill_manual(
+    values = c("No" = "#FFA500", "Yes" = "#FFDB58"),
+    labels = c("Yes" = "Cancer", "No" = "No Cancer")
+  ) +
+  scale_x_discrete(
+    labels = c("Yes" = "Cancer", "No" = "No Cancer")
+  ) +
+  theme_minimal()
+  
+
+  
+#Density of Age by Cancer Status
+ggplot(d, aes(x = Age_years, fill = as.factor(MCQ220))) +
+  geom_density(alpha = 0.5) +
+  labs(
+    x = "Age",
+    y = "Age Density",
+    title = "Density of Age by Cancer Status",
+    fill = "Cancer Status"
+  ) +
+  scale_fill_manual(
+    values = c("Yes" = "#FFDB58", "No" = "#FFA500"),
+    labels = c("Yes" = "Cancer", "No" = "No Cancer")
+  ) +
+  theme_minimal()
+  
+#Density of Gender by Cancer Status
+ggplot(d, aes(x = as.factor(MCQ220), fill = as.factor(Gender))) +
+  geom_bar(position = "fill") +  
+  labs(x = "Cancer Status", y = "Proportion", title="Gender Distribution by Cancer Status", fill = "Gender")+
+  scale_x_discrete(
+  labels = c("Yes" = "Cancer", "No" = "No Cancer")
+  )+
+  scale_fill_manual(
+  values = c("1" = "#FFA500", "2" = "#FFDB58"),
+  labels = c("1" = "Male", "2" = "Female")
+)+
+  theme_minimal()
+
+#Boxplot by Age, Gender, and Cancer Status
+ggplot(d, aes(x = as.factor(MCQ220), y = Age_years, fill = as.factor(Gender))) +
+  geom_boxplot() +
+  labs(
+    x = "Gender",
+    y = "Age",
+    fill = "Gender",
+    title = "Age by Gender and Cancer Status"
+  ) +
+  scale_x_discrete(
+    labels = c("Yes" = "Cancer", "No" = "No Cancer")
+  ) +
+  scale_fill_manual(
+    values = c("1" = "#FFA500", "2" = "#FFDB58"),
+    labels = c("1" = "Male", "2" = "Female")
+  ) +
+  theme_minimal()

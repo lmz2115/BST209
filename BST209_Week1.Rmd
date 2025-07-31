@@ -1,0 +1,311 @@
+---
+title: "Maoz_Week1_BST209"
+output: html_document
+date: "2025-07-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r merge datasets}
+rm(list=ls())
+library(dplyr)
+load("covariate_df.rData")
+d <- covariate_df
+length(unique(d$SEQN)) == dim(d)[1] ##quick and dirty check that there is one row per ID
+q <- read.csv("questionnaire.csv")
+
+d <- d %>%
+  left_join(select(q, SEQN, MCQ220), by = "SEQN")
+
+table(d$MCQ220) ## check which values
+d$MCQ220[d$MCQ220 == 2] <- 0  ## change unaffected to 0 to 
+d$MCQ220 <- factor(d$MCQ220) ## May not need this but makes cancer a factor
+d <- subset(d, is.na(MCQ220) == FALSE) ## Excludes individuals with missing data for the outcome
+
+sum(complete.cases(d)) ## Check how many entries have all the data (n=0)
+
+d <- d[, colSums(is.na(d)) <= 1000] ## Removes columns with a lot of missing data
+
+d <- filter(d, complete.cases(d)) ## After removing the columns causing a lot of missing-ness, look for complete cases
+
+
+
+
+
+
+
+library(dplyr)
+library(tableone)
+
+# Rename columns in d
+d <- d %>%
+  rename(
+    Gender = RIAGENDR,
+    Age_years = RIDAGEYR,
+    Race_Ethnicity = RIDRETH1,
+    Education_Level = DMDEDUC2,
+    Marital_Status = DMDMARTL,
+    Income_to_Poverty_Ratio = INDFMPIR,
+    Household_Size = DMDHHSIZ,
+    BMI_kgm2 = BMXBMI,
+    Weight_kg = BMXWT,
+    Height_cm = BMXHT,
+    Waist_Circumference_cm = BMXWAIST,
+    Systolic_BP_mmHg = BPXSY1,
+    Diastolic_BP_mmHg = BPXDI1,
+    Little_Interest_Pleasure = PHQ020,
+    Feeling_Down_Depressed = PHQ030,
+    Alcohol_Intake_g = DR1TALCO,
+    Total_Cholesterol_mgdl = LBXTC,
+    HDL_Cholesterol_mgdl = LBDHDD,
+    Serum_Creatinine_mgdl = LBXSCR
+  ) %>%
+  mutate(MCQ220 = factor(MCQ220, levels = c(0, 1), labels = c("No", "Yes")))
+
+# Define variables and factor variables with new names
+myVars <- c(
+  "Gender", "Age_years", "Race_Ethnicity", "Education_Level", "Marital_Status", 
+  "Income_to_Poverty_Ratio", "Household_Size", "BMI_kgm2", "Weight_kg", "Height_cm", 
+  "Waist_Circumference_cm", "Systolic_BP_mmHg", "Diastolic_BP_mmHg", 
+  "Little_Interest_Pleasure", "Feeling_Down_Depressed", "Alcohol_Intake_g", 
+  "Total_Cholesterol_mgdl", "HDL_Cholesterol_mgdl", "Serum_Creatinine_mgdl" 
+)
+
+factorVars <- c(
+  "Gender", "Race_Ethnicity", "Education_Level", "Marital_Status",
+  "Little_Interest_Pleasure", "Feeling_Down_Depressed"
+)
+
+
+## Visualizing the data
+skimr::skim(d) ##Gives an overview of the data - takes a long time to run but I can see that many columns have a lot of missing values
+
+
+
+## Making a table 1 
+
+# Create Table 1 stratified by MCQ220 (cancer history)
+tbl1 <- CreateTableOne(vars = myVars,
+                       factorVars = factorVars, strata = "MCQ220",
+                       data = d,
+                       addOverall = TRUE)
+
+tbl1 <- as.data.frame(print(tbl1, printToggle = FALSE, noSpaces = TRUE, smd = TRUE))
+
+
+
+
+View(tbl1)
+##write.xlsx(tbl1, "tbl1.xlsx", rowNames = T)
+
+
+ 
+
+
+
+
+
+set.seed(1)
+split <- sample(c(1,0), nrow(d), replace = TRUE, prob = c(0.7, 0.3))
+check <- table(split)
+check
+prop.table(check)
+rm(check)
+
+
+
+```
+#_______________________________________________________________________________
+#Lillian Section
+#_______________________________________________________________________________
+
+#_______________________________________________________________________________
+#Table 1
+#_______________________________________________________________________________
+
+
+#Change Categorical and Binary Variables to Factor          
+d$Gender <- factor(d$Gender, labels = c("Male", "Female"))
+d$Race_Ethnicity <- factor(d$Race_Ethnicity)
+d$Education_Level <- factor(d$Education_Level) 
+d$Marital_Status <- factor(d$Marital_Status)
+d$Household_Size <- factor(d$Household_Size)
+
+#Render Categorical vs Continuous Variables
+render.categorical <- function(x, ...) {
+  c("", sapply(stats.apply.rounding(stats.default(x)), function(y) with(y,
+                  sprintf("%s (%s%%)", prettyNum(FREQ, big.mark=","), PCT))))}
+
+my.render.cont <- function(x) {
+  with(stats.apply.rounding(stats.default(x, ), digits = 3),
+       c("Age_years",
+         "Median [IQR]" =
+           sprintf(paste("%s [%s, %s]"), MEDIAN,Q1,Q3))) }
+
+render.strat <- function (label, n, ...) {
+  sprintf("<span class='stratlabel'>%s<br><span class='stratn'>(N=%s)</span></span>", 
+          label, prettyNum(n, big.mark=",")) }
+          
+
+
+#Render Continuous Variables vs Categorical
+my_render <- function(x, name, ...) {
+  # Use mean ± SD for Age only
+  if (name == "Age_years") {
+    with(stats.apply.rounding(stats.default(x), digits = 1),
+         sprintf("%s ± %s", MEAN, SD))
+  } else {
+    # Default: counts and percentages
+    render.default(x, name, ...)
+  }
+}
+
+#Rename Data Variables
+library(Hmisc)
+label(d$Age_years) <- "Age (years)"
+label(d$Gender) <- "Gender"
+label(d$Race_Ethnicity) <- "Race/Ethnicity"
+label(d$Education_Level) <- "Education Level"
+label(d$Marital_Status) <- "Marital Status"
+label(d$Household_Size) <- "Household Size"
+label(d$Income_to_Poverty_Ratio) <- "Income to Poverty"
+
+
+#Table 1 Summary Table by Cancer
+table1(~ Age_years  + Gender  + Race_Ethnicity + Education_Level + Marital_Status + Household_Size + Income_to_Poverty_Ratio | MCQ220, data = d, overall = "Total", caption = "Table 1: Demographic Characteristics by Cancer Status", render.var = my_render)
+
+#_______________________________________________________________________________
+#Visualizations
+#_______________________________________________________________________________
+
+
+#Plot of Cancer Status
+ggplot(d, aes(x=as.factor(MCQ220), fill=as.factor(MCQ220) )) +
+labs(
+x = "Cancer Status",
+y = "Count",
+title = "Cancer Status"
+)+
+  geom_bar( ) +
+  geom_text(stat = "count", aes(label = ..count..), vjust = -0.5) +
+  scale_fill_manual(
+    values = c("No" = "#FFA500", "Yes" = "#FFDB58"),  
+    labels = c("Yes" = "Cancer", "No" = "No Cancer")
+  ) +
+  scale_x_discrete(
+  labels = c("Yes" = "Cancer", "No" = "No Cancer")
+)+
+  theme(plot.title = element_text(hjust = 0.5), legend.position="none", panel.background = element_rect(fill = "white"),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank())
+  
+
+
+#Histogram of Cancer vs No Cancer Groups
+library(ggplot2)
+ggplot(df_comp, aes(x = factor(Cancer), y = Age, fill = factor(Cancer))) +
+  geom_col(width = 0.6, alpha = 0.8) +  
+  labs(
+    x = "Cancer Status",  # X axis label
+    y = "Age",  # Y axis label
+    title = "Age by Cancer Status",  # Title
+    fill = "Cancer Status"  # Legend title
+  ) +
+  scale_fill_manual(
+    values = c("1" = "#FF69B4", "2" = "#1E90FF"),  # Custom colors for bar graph
+    labels = c("1" = "Cancer", "2" = "No Cancer")  # Full labels for the legend
+  ) +
+  theme_minimal(base_size = 10) +  
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold", color = "#333333"),  
+    axis.title.x = element_text(size = 12, face = "bold", color = "#333333"),  # Styled x axis title
+    axis.title.y = element_text(size = 12, face = "bold", color = "#333333"),  # Styled y axis title
+    axis.text = element_text(size = 10, color = "#333333"),  # Styled axis text
+    legend.position = "bottom",  # Move legend 
+    legend.title = element_text(size = 10, face = "bold"),  # Styled legend title
+    legend.text = element_text(size = 10),  # Styled legend text
+    panel.grid.major = element_line(color = "#DDDDDD"),  # Softer grid lines
+    panel.grid.minor = element_blank(),  # Remove minor grid lines
+    panel.background = element_rect(fill = "white", color = NA),  # Panel background
+    plot.background = element_rect(fill = "white", color = NA)  # Plot background
+  ) +
+  geom_text(
+    aes(label = Age),  # Add labels showing the number of events
+    vjust = -0.5,  # Position labels above the bars
+    size = 3,  # Text size
+    color = "#333333",  # Text color
+    fontface = "bold"  # Bold font
+  )
+  
+#Violin Plot of Age by Cancer Status
+ggplot(d, aes(x = as.factor(MCQ220), y = Age_years, fill = as.factor(MCQ220))) +
+  geom_violin(trim = FALSE) +
+  labs(
+    x = "Cancer Status",
+    y = "Age",
+    title = "Age Distribution by Cancer Status",
+    fill = "Cancer Status"
+  ) +
+  scale_fill_manual(
+    values = c("No" = "#FFA500", "Yes" = "#FFDB58"),
+    labels = c("Yes" = "Cancer", "No" = "No Cancer")
+  ) +
+  scale_x_discrete(
+    labels = c("Yes" = "Cancer", "No" = "No Cancer")
+  ) +
+  theme_minimal()
+  
+
+  
+#Density of Age by Cancer Status
+ggplot(d, aes(x = Age_years, fill = as.factor(MCQ220))) +
+  geom_density(alpha = 0.5) +
+  labs(
+    x = "Age",
+    y = "Age Density",
+    title = "Density of Age by Cancer Status",
+    fill = "Cancer Status"
+  ) +
+  scale_fill_manual(
+    values = c("Yes" = "#FFDB58", "No" = "#FFA500"),
+    labels = c("Yes" = "Cancer", "No" = "No Cancer")
+  ) +
+  theme_minimal()
+  
+#Density of Gender by Cancer Status
+ggplot(d, aes(x = as.factor(MCQ220), fill = as.factor(Gender))) +
+  geom_bar(position = "fill") +  
+  labs(x = "Cancer Status", y = "Proportion", title="Gender Distribution by Cancer Status", fill = "Gender")+
+  scale_x_discrete(
+  labels = c("Yes" = "Cancer", "No" = "No Cancer")
+  )+
+  scale_fill_manual(
+  values = c("1" = "#FFA500", "2" = "#FFDB58"),
+  labels = c("1" = "Male", "2" = "Female")
+)+
+  theme_minimal()
+
+#Boxplot by Age, Gender, and Cancer Status
+ggplot(d, aes(x = as.factor(MCQ220), y = Age_years, fill = as.factor(Gender))) +
+  geom_boxplot() +
+  labs(
+    x = "Cancer Status",
+    y = "Age",
+    fill = "Gender",
+    title = "Age by Gender and Cancer Status"
+  ) +
+  scale_x_discrete(
+    labels = c("Yes" = "Cancer", "No" = "No Cancer")
+  ) +
+  scale_fill_manual(
+    values = c("Male" = "#FFA500", "Female" = "#FFDB58"),
+    labels = c("Male" = "Male", "Female" = "Female")
+  )+
+  theme(plot.title = element_text(hjust = 0.5), legend.position="none", panel.background = element_rect(fill = "white"),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank())
+
