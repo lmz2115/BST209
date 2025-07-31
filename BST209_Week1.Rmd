@@ -121,16 +121,6 @@ rm(check)
 ```
 
 #_______________________________________________________________________________
-#Correlation Plot
-#_______________________________________________________________________________
-
-## Make a correlation plot for variables in myVars
-library(corrplot)
-d_corr_plot = d[, myVars]
-corr_val <- cor(d_corr_plot)
-corrplot(corr_val,type = "lower",order="hclust")
-
-#_______________________________________________________________________________
 #Lillian Section
 #_______________________________________________________________________________
 
@@ -320,3 +310,13 @@ ggplot(d, aes(x = as.factor(MCQ220), y = Age_years, fill = as.factor(Gender))) +
   panel.grid.major = element_blank(),
   panel.grid.minor = element_blank())
 
+
+#_______________________________________________________________________________
+#Correlation Plot
+#_______________________________________________________________________________
+
+## Make a correlation plot for variables in myVars
+library(corrplot)
+d_corr_plot = d[, myVars]
+corr_val <- cor(d_corr_plot)
+corrplot(corr_val,type = "lower",order="hclust")
