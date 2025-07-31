@@ -45,9 +45,53 @@ df_comp <- df1 |>
 df_comp2 <- df_comp
 df_comp2$Cancer <- factor(df_comp2$Cancer, levels = c(1,2), labels = c ("Cancer", "No Cancer"), ordered = T)
 
-  
+#Prepare for Table 1
+render.categorical <- function(x, ...) {
+  c("", sapply(stats.apply.rounding(stats.default(x)), function(y) with(y,
+                  sprintf("%s (%s%%)", prettyNum(FREQ, big.mark=","), PCT))))}
+
+my.render.cont <- function(x) {
+  with(stats.apply.rounding(stats.default(x, ), digits = 3),
+       c("Age_years",
+         "Median [IQR]" =
+           sprintf(paste("%s [%s, %s]"), MEDIAN,Q1,Q3))) }
+
+render.strat <- function (label, n, ...) {
+  sprintf("<span class='stratlabel'>%s<br><span class='stratn'>(N=%s)</span></span>", 
+          label, prettyNum(n, big.mark=",")) }
+          
+#Change Variables to Factor          
+d$Gender <- factor(d$Gender, labels = c("Male", "Female"))
+d$Race_Ethnicity <- factor(d$Race_Ethnicity)  # Add labels if needed
+d$Education_Level <- factor(d$Education_Level)  # Add labels if needed
+d$Marital_Status <- factor(d$Marital_Status)
+d$Household_Size <- factor(d$Household_Size)
+
+
+#Render Continuous Variables vs Categorical
+my_render <- function(x, name, ...) {
+  # Use mean ± SD for Age only
+  if (name == "Age_years") {
+    with(stats.apply.rounding(stats.default(x), digits = 1),
+         sprintf("%s ± %s", MEAN, SD))
+  } else {
+    # Default: counts and percentages
+    render.default(x, name, ...)
+  }
+}
+
+library(Hmisc)
+label(d$Age_years) <- "Age (years)"
+label(d$Gender) <- "Gender"
+label(d$Race_Ethnicity) <- "Race/Ethnicity"
+label(d$Education_Level) <- "Education Level"
+label(d$Marital_Status) <- "Marital Status"
+label(d$Household_Size) <- "Household Size"
+label(d$Income_to_Poverty_Ratio) <- "Income to Poverty"
+
+
 #Table 1 Summary Table by Cancer
-table1(~ Age_years  + Gender  + Race_Ethnicity + Education_Level + Marital_Status + Household_Size + Income_to_Poverty_Ratio | MCQ220, data = d, overall = "Total", caption = "Table 1: Demographic Characteristics by Cancer Status")
+table1(~ Age_years  + Gender  + Race_Ethnicity + Education_Level + Marital_Status + Household_Size + Income_to_Poverty_Ratio | MCQ220, data = d, overall = "Total", caption = "Table 1: Demographic Characteristics by Cancer Status", render.var = my_render)
 
 #Plot of Cancer Status
 ggplot(d, aes(x=as.factor(MCQ220), fill=as.factor(MCQ220) )) +
@@ -159,7 +203,7 @@ ggplot(d, aes(x = as.factor(MCQ220), fill = as.factor(Gender))) +
 ggplot(d, aes(x = as.factor(MCQ220), y = Age_years, fill = as.factor(Gender))) +
   geom_boxplot() +
   labs(
-    x = "Gender",
+    x = "Cancer Status",
     y = "Age",
     fill = "Gender",
     title = "Age by Gender and Cancer Status"
@@ -168,7 +212,9 @@ ggplot(d, aes(x = as.factor(MCQ220), y = Age_years, fill = as.factor(Gender))) +
     labels = c("Yes" = "Cancer", "No" = "No Cancer")
   ) +
   scale_fill_manual(
-    values = c("1" = "#FFA500", "2" = "#FFDB58"),
-    labels = c("1" = "Male", "2" = "Female")
-  ) +
-  theme_minimal()
+    values = c("Male" = "#FFA500", "Female" = "#FFDB58"),
+    labels = c("Male" = "Male", "Female" = "Female")
+  )+
+  theme(plot.title = element_text(hjust = 0.5), legend.position="none", panel.background = element_rect(fill = "white"),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank())
