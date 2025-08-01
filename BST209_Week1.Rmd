@@ -285,8 +285,7 @@ ggplot(d, aes(x = as.factor(MCQ220), fill = as.factor(Gender))) +
   labels = c("Yes" = "Cancer", "No" = "No Cancer")
   )+
   scale_fill_manual(
-  values = c("1" = "#FFA500", "2" = "#FFDB58"),
-  labels = c("1" = "Male", "2" = "Female")
+  values = c("Male" = "#FFA500", "Female" = "#FFDB58"),
 )+
   theme_minimal()
 
