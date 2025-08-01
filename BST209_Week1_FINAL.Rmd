@@ -27,10 +27,10 @@ knitr::opts_chunk$set(echo = F)
 
 rm(list=ls())
 library(dplyr)
-load("covariate_df.rData")
+load("~/Downloads/covariate_df.rData")
 d <- covariate_df
 length(unique(d$SEQN)) == dim(d)[1] ##quick and dirty check that there is one row per ID
-q <- read.csv("questionnaire.csv")
+q <- read.csv("~/Downloads/questionnaire.csv")
 
 d <- d %>%
   left_join(select(q, SEQN, MCQ220), by = "SEQN")
@@ -105,16 +105,6 @@ tbl1 <- CreateTableOne(vars = myVars,
 tbl1 <- as.data.frame(print(tbl1, printToggle = FALSE, noSpaces = TRUE, smd = TRUE))
 
 
-View(tbl1)
-
-```
-
-##write.xlsx(tbl1, "tbl1.xlsx", rowNames = T)
-
-
- 
-
-```{r plotting}
 set.seed(1)
 split <- sample(c(1,0), nrow(d), replace = TRUE, prob = c(0.7, 0.3))
 check <- table(split)
@@ -122,10 +112,10 @@ check
 prop.table(check)
 rm(check)
 
+##write.xlsx(tbl1, "tbl1.xlsx", rowNames = T)
 
 
 ```
- 
 
 
 ```{r plotting}
@@ -181,13 +171,13 @@ library(table1)
 #Table 1 Summary Table by Cancer
 table1(~ Age_years  + Gender  + Race_Ethnicity + Education_Level + Marital_Status + Household_Size + Income_to_Poverty_Ratio | MCQ220, data = d, overall = "Total", caption = "Table 1: Demographic Characteristics by Cancer Status", render.var = my_render)
 
-```
+
 
 #_______________________________________________________________________________
 #Visualizations
 #_______________________________________________________________________________
 
-```{r plotting}
+
 #Plot of Cancer Status
 ggplot(d, aes(x=as.factor(MCQ220), fill=as.factor(MCQ220) )) +
 labs(
@@ -208,10 +198,9 @@ title = "Cancer Status"
   panel.grid.major = element_blank(),
   panel.grid.minor = element_blank())
   
-```
 
 
-```{r plotting}
+
 #Violin Plot of Age by Cancer Status
 ggplot(d, aes(x = as.factor(MCQ220), y = Age_years, fill = as.factor(MCQ220))) +
   geom_violin(trim = FALSE) +
@@ -229,9 +218,8 @@ ggplot(d, aes(x = as.factor(MCQ220), y = Age_years, fill = as.factor(MCQ220))) +
     labels = c("Yes" = "Cancer", "No" = "No Cancer")
   ) +
   theme_minimal()
-```
 
-```{r plotting}
+
 #Density of Age by Cancer Status
 ggplot(d, aes(x = Age_years, fill = as.factor(MCQ220))) +
   geom_density(alpha = 0.5) +
@@ -246,10 +234,9 @@ ggplot(d, aes(x = Age_years, fill = as.factor(MCQ220))) +
     labels = c("Yes" = "Cancer", "No" = "No Cancer")
   ) +
   theme_minimal()
-```  
 
 
-```{r plotting}
+
 #Density of Gender by Cancer Status
 ggplot(d, aes(x = as.factor(MCQ220), fill = as.factor(Gender))) +
   geom_bar(position = "fill") +  
@@ -260,9 +247,7 @@ ggplot(d, aes(x = as.factor(MCQ220), fill = as.factor(Gender))) +
   scale_fill_manual(
   values = c("Male" = "#FFA500", "Female" = "#FFDB58"))+
   theme_minimal()
-```  
 
-```{r plotting}
 #Boxplot by Age, Gender, and Cancer Status
 ggplot(d, aes(x = as.factor(MCQ220), y = Age_years, fill = as.factor(Gender))) +
   geom_boxplot() +
